@@ -10,6 +10,8 @@ import type { Category } from "@/lib/types";
 import CategoryChips from "@/components/skills/CategoryChips";
 import SkillGrid from "@/components/skills/SkillGrid";
 
+export const dynamic = "force-dynamic";
+
 interface HomeProps {
   searchParams: {
     q?: string;
@@ -25,16 +27,16 @@ export default async function Home({ searchParams }: HomeProps) {
 
   return (
     <>
-      <CategoryChips />
-      <div className="px-4 py-6">
-        {search && (
-          <p className="mb-4 text-sm text-wenex-muted">
-            {skills.length} resultados para{" "}
-            <span className="font-medium text-wenex-text">"{search}"</span>
-          </p>
-        )}
-        <SkillGrid skills={skills} />
-      </div>
+    <CategoryChips />
+    <div className="px-4 py-6">
+    {search && (
+      <p className="mb-4 text-sm text-wenex-muted">
+      {skills.length} resultados para{" "}
+      <span className="font-medium text-wenex-text">"{search}"</span>
+      </p>
+    )}
+    <SkillGrid skills={skills} />
+    </div>
     </>
   );
 }
