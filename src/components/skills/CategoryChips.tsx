@@ -35,14 +35,20 @@ export default function CategoryChips() {
   }
 
   return (
-    <div className="chip-row sticky top-14 z-30 flex gap-3 overflow-x-auto border-b border-wenex-border bg-wenex-bg px-4 py-3">
+    <div
+      className="chip-row sticky top-14 z-30 flex gap-2 overflow-x-auto border-b border-wenex-border bg-wenex-bg px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3"
+      role="tablist"
+      aria-label="Filtrar por categoría"
+    >
       {CHIPS.map((chip) => {
         const isActive = chip === active;
         return (
           <button
             key={chip}
             onClick={() => selectChip(chip)}
-            className={`shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+            role="tab"
+            aria-selected={isActive}
+            className={`shrink-0 rounded-lg px-3 py-2 text-sm font-medium transition active:scale-95 ${
               isActive
                 ? "bg-wenex-text text-wenex-bg"
                 : "bg-wenex-surface text-wenex-text hover:bg-wenex-border"
