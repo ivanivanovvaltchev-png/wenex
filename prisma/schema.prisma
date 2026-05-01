@@ -1,0 +1,161 @@
+// =====================================================
+//  Wenex — Schema de Base de Datos
+//  Esto es la única fuente de verdad del modelo de dominio.
+//  Los modelos Account/Session/VerificationToken son
+//  requeridos por NextAuth (no los toques).
+// =====================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+// ---------- NextAuth (requeridos por el adapter) ----------
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  @@unique([identifier, token])
+}
+
+// ---------- Usuarios ----------
+model User {
+  id               String   @id @default(cuid())
+  email            String?  @unique
+  emailVerified    DateTime?
+  username         String?  @unique
+  name             String?
+  displayName      String?
+  image            String?
+  bio              String?
+
+  // Sistema económico de Wenex
+  evolutionCredits Int      @default(10)
+  reputationScore  Float    @default(0)
+  totalReviews     Int      @default(0)
+
+  // Geolocalización para "Habilidades Locales"
+  city             String?
+  country          String?
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  skillsOffered Skill[]    @relation("SkillOwner")
+  reviewsGiven  Review[]   @relation("Reviewer")
+  reviewsGot    Review[]   @relation("Reviewed")
+  exchanges     Exchange[]
+}
+
+// ---------- Habilidades (las "tarjetas" del feed) ----------
+model Skill {
+  id              String    @id @default(cuid())
+  title           String
+  description     String    @db.Text
+  category        Category
+  seeking         String    // Lo que el usuario busca a cambio
+  creditCost      Int       @default(1)
+  thumbnailUrl    String
+  videoPreviewUrl String?   // Proof of Skill (vídeo de 60s) — Fase 2
+  modality        Modality  @default(ONLINE)
+  durationMinutes Int       @default(60)
+  views           Int       @default(0)
+  endorsements    Int       @default(0)
+  ownerId         String
+  owner           User      @relation("SkillOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  reviews   Review[]
+  exchanges Exchange[]
+
+  @@index([category, isActive])
+  @@index([createdAt])
+}
+
+// ---------- Reseñas tribales ----------
+model Review {
+  id         String   @id @default(cuid())
+  rating     Int
+  comment    String?  @db.Text
+  skillId    String
+  skill      Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  reviewerId String
+  reviewer   User     @relation("Reviewer", fields: [reviewerId], references: [id])
+  reviewedId String
+  reviewed   User     @relation("Reviewed", fields: [reviewedId], references: [id])
+  createdAt  DateTime @default(now())
+  @@unique([skillId, reviewerId])
+}
+
+// ---------- Intercambios ----------
+model Exchange {
+  id               String         @id @default(cuid())
+  skillId          String
+  skill            Skill          @relation(fields: [skillId], references: [id])
+  learnerId        String
+  learner          User           @relation(fields: [learnerId], references: [id])
+  creditsExchanged Int
+  status           ExchangeStatus @default(PENDING)
+  scheduledAt      DateTime?
+  completedAt      DateTime?
+  createdAt        DateTime       @default(now())
+}
+
+enum Category {
+  CRAFTS
+  TECH
+  WELLNESS
+  MUSIC
+  LANGUAGES
+  COOKING
+  ART
+  SPORTS
+  BUSINESS
+  SCIENCE
+}
+
+enum Modality {
+  ONLINE
+  IN_PERSON
+  HYBRID
+}
+
+enum ExchangeStatus {
+  PENDING
+  ACCEPTED
+  COMPLETED
+  CANCELLED
+}
